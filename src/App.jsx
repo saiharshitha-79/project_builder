@@ -195,6 +195,25 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPDF = () => {
+    if (!activeProject.content.Report) return;
+    
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(22);
+      doc.text(activeProject.title + ' - Report', 20, 20);
+      
+      doc.setFontSize(11);
+      const splitText = doc.splitTextToSize(activeProject.content.Report, 170);
+      doc.text(splitText, 20, 35);
+      
+      doc.save(`${activeProject.title.replace(/\s+/g, '_')}_Report.pdf`);
+    } catch (e) {
+      console.error("PDF generation failed", e);
+      alert("Failed to render PDF.");
+    }
+  };
+
   const handleDownloadPPTX = async () => {
     if (!activeProject.content.PPT) return;
     const pres = new pptxgen();
