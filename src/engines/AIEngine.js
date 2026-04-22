@@ -1,26 +1,61 @@
 // Engine logic enabling BOTH Mock and Real AI generation
 export const AIEngine = {
   async fetchRealAI(systemInstruction, prompt) {
-    const apiKey = localStorage.getItem('GEMINI_API_KEY');
-    if (!apiKey) return null; // Returns null so fallbacks execute
+    const apiKey = localStorage.getItem('GEMINI_API_KEY'); // Generic key
+    const provider = localStorage.getItem('AI_PROVIDER') || 'Gemini';
+    if (!apiKey) return null;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { 
-            parts: [{ text: systemInstruction }] 
-          },
-          contents: [{ parts: [{ text: prompt }] }],
-        })
-      });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-      return data.candidates[0].content.parts[0].text;
+      if (provider === 'Gemini') {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemInstruction }] },
+            contents: [{ parts: [{ text: prompt }] }],
+          })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.candidates[0].content.parts[0].text;
+      } 
+      
+      else if (provider === 'OpenAI') {
+        const response = await fetch(`https://api.openai.com/v1/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({
+             model: 'gpt-4o',
+             messages: [
+               { role: 'system', content: systemInstruction },
+               { role: 'user', content: prompt }
+             ]
+          })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.choices[0].message.content;
+      }
+      
+      else if (provider === 'Groq') {
+        const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({
+             model: 'llama3-8b-8192',
+             messages: [
+               { role: 'system', content: systemInstruction },
+               { role: 'user', content: prompt }
+             ]
+          })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.choices[0].message.content;
+      }
     } catch (e) {
       console.error("AI Error:", e);
-      return `[API Error]: ${e.message}\n\nPlease check your API Key.`;
+      return `[API Error]: ${e.message}\nProvider: ${provider}\nPlease check your API Key.`;
     }
   },
 

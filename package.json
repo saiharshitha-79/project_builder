@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
+    "firebase": "^12.12.1",
     "idb": "^8.0.3",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
     "pptxgenjs": "^4.0.1",

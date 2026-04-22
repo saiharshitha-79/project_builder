@@ -4,6 +4,7 @@ import { saveProjectLocal, getProjectsLocal, queueSyncAction } from './db/db';
 import { AIEngine } from './engines/AIEngine';
 import JSZip from 'jszip';
 import pptxgen from 'pptxgenjs';
+import { jsPDF } from 'jspdf';
 import { Download, Plus, Save, CloudOff, Cloud, Moon, Sun, RefreshCw, FileText } from 'lucide-react';
 import './index.css';
 
@@ -277,16 +278,26 @@ export default function App() {
         <header className="app-header">
           <div>
             <h1>Smart Academic Builder</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>Patent-Level Intelligent System</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Patent-Level SaaS Engine</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <select 
+              defaultValue={localStorage.getItem('AI_PROVIDER') || 'Gemini'}
+              onChange={(e) => localStorage.setItem('AI_PROVIDER', e.target.value)}
+              style={{ padding: '0.4rem', border: '1px solid var(--glass-border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderRadius: 'var(--border-radius)', fontSize: '0.8rem' }}
+              title="Select External LLM Provider"
+            >
+              <option value="Gemini">Google Gemini</option>
+              <option value="OpenAI">OpenAI (GPT-4o)</option>
+              <option value="Groq">Groq (Llama)</option>
+            </select>
             <input 
                type="password" 
-               placeholder="Gemini API Key (optional)" 
+               placeholder="Enter API Key (optional)" 
                onChange={(e) => localStorage.setItem('GEMINI_API_KEY', e.target.value)}
                defaultValue={localStorage.getItem('GEMINI_API_KEY') || ''}
                style={{ width: '180px', padding: '0.4rem 0.8rem', border: '1px solid var(--glass-border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderRadius: 'var(--border-radius)', fontSize: '0.8rem' }}
-               title="Paste a free Google Gemini API Key here to enable REAL text/code generation"
+               title="Paste your selected Provider's API key here"
             />
             <div className={`status-badge ${isOnline ? 'status-online' : 'status-offline'}`}>
               {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
@@ -407,6 +418,16 @@ export default function App() {
                    title="Download presentation as a real Microsoft PowerPoint .pptx file"
                  >
                    <FileText size={18} /> Download real .pptx
+                 </button>
+               )}
+               {activeTab === 'Report' && activeProject.content.Report && (
+                 <button 
+                   className="btn btn-primary" 
+                   style={{ background: '#db2777' }}
+                   onClick={handleDownloadPDF}
+                   title="Download Report as dynamic A4 PDF Document"
+                 >
+                   <FileText size={18} /> Download .pdf
                  </button>
                )}
                {activeTab === 'Viva' && activeProject.content.Viva && (

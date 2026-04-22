@@ -1,4 +1,6 @@
 import { openDB } from 'idb';
+import { db as firestoreDB } from './firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 
 const DB_NAME = 'AcademicProjectBuilderDB';
 const DB_VERSION = 1;
@@ -43,18 +45,31 @@ export const queueSyncAction = async (action) => {
   await tx.done;
 };
 
-// Simulate Server Sync
+// Serverless Cloud Sync
 export const processSyncQueue = async () => {
   const db = await initDB();
   const allActions = await db.getAll('syncQueue');
   if (allActions.length === 0) return;
   
-  console.log(`[Sync Engine] Processing ${allActions.length} offline actions...`);
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  console.log(`[Firebase Sync Engine] Pushing ${allActions.length} local actions to Cloud...`);
   
+  try {
+    for (const action of allActions) {
+       if (action.projectId) {
+         const proj = await db.get('projects', action.projectId);
+         if (proj) {
+            // Push to Google Firebase document: /projects/{id}
+            await setDoc(doc(firestoreDB, "projects", proj.id), proj);
+         }
+       }
+    }
+  } catch (e) {
+    console.error("Firebase Cloud Sync Failed - Are your credentials configured in firebaseConfig.js?", e);
+    return; // Retain queue so it tries again when online or configured
+  }
+
   const tx = db.transaction('syncQueue', 'readwrite');
   await tx.store.clear();
   await tx.done;
-  console.log('[Sync Engine] Sync Complete!');
+  console.log('[Firebase Sync Engine] Cloud Sync Complete!');
 };
